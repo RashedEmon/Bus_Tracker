@@ -36,7 +36,6 @@ android {
     kotlinOptions {
         jvmTarget = '1.8'
     }
-
     sourceSets {
         main.java.srcDirs += 'src/main/kotlin'
     }
@@ -49,7 +48,9 @@ android {
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
     }
-
+    defaultConfig {
+        minSdkVersion 20
+    }
     buildTypes {
         release {
             // TODO: Add your own signing config for the release build.
@@ -58,6 +59,7 @@ android {
         }
     }
 }
+
 
 flutter {
     source '../..'
