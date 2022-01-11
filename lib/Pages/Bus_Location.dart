@@ -45,20 +45,24 @@ class MapSample extends StatefulWidget {
 
 class MapSampleState extends State<MapSample> {
   //final Completer<GoogleMapController> _controller = Completer();
-  late StreamSubscription _locationSubscription;
+  dynamic _locationSubscription;
   Location _locationTracker = Location();
-  late Marker marker;
-  late Circle circle;
+  late Marker marker=Marker(markerId: MarkerId('bus'));
+  late Circle circle = Circle(circleId: CircleId('buscircle'));
   late GoogleMapController _controller;
 
+  Location location = Location();
+  late bool _serviceEnabled;
+  late PermissionStatus _permissionGranted;
+  late LocationData _locationData;
 
   static const CameraPosition _initialPosition = CameraPosition(
     target: LatLng(23.777176, 90.399452),
-    zoom: 9,
+    zoom: 18,
   );
 
   Future<Uint8List> getMarker() async {
-    ByteData byteData = await DefaultAssetBundle.of(context).load("assets/bus.png");
+    ByteData byteData = await DefaultAssetBundle.of(context).load('assets/bus.png');
     return byteData.buffer.asUint8List();
   }
 
@@ -88,16 +92,33 @@ class MapSampleState extends State<MapSample> {
             );
       });
   }
+void permissiion() async{
+  _serviceEnabled = await location.serviceEnabled();
+  if (!_serviceEnabled) {
+    _serviceEnabled = await location.requestService();
+    if (!_serviceEnabled) {
+      return;
+    }
+  }
 
+  _permissionGranted = await location.hasPermission();
+  if (_permissionGranted == PermissionStatus.denied) {
+    _permissionGranted = await location.requestPermission();
+    if (_permissionGranted != PermissionStatus.granted) {
+      return;
+    }
+  }
+}
   void getCurrentLocation() async {
     try {
+      permissiion();
       Uint8List imageData = await getMarker();
       var location = await _locationTracker.getLocation();
       UpdateMarkerAndCircle(location, imageData);
         if(_locationSubscription != null){
           _locationSubscription.cancel();
         }
-      _locationSubscription= _locationTracker.onLocationChanged.listen((LocationData newLocalData){
+      _locationSubscription=_locationTracker.onLocationChanged.listen((LocationData newLocalData){
         if(_controller != null){
           _controller.animateCamera(CameraUpdate.newCameraPosition(CameraPosition(
             bearing: 192.83349,
@@ -127,13 +148,19 @@ void dispose(){
         initialCameraPosition: _initialPosition,
         onMapCreated: (GoogleMapController controller) {
           _controller=controller;
-          getCurrentLocation();
+         // getCurrentLocation();
         },
         markers: Set.of((marker != null)? [marker]:[]),
         circles: Set.of((circle != null)? [circle]:[]),
 
       ),
-
+        floatingActionButton: FloatingActionButton.extended(
+          onPressed: (){
+            getCurrentLocation();
+          },
+          label: Text('To the lake!'),
+          icon: Icon(Icons.directions_boat),
+        )
     );
   }
 }

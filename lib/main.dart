@@ -1,6 +1,10 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:bus_tracker/Pages/Bus_Details.dart';
 import 'package:bus_tracker/Pages/Bus_Location.dart';
+import 'package:http/http.dart' as http;
+import '../Pages/BusDetail.dart';
 
 void main() {
   runApp(
@@ -13,13 +17,15 @@ void main() {
         theme: ThemeData(
           primarySwatch: Colors.blue,
         ),
-        home: Home(),
+        home: const Home(),
       )
   );
 }
 
 
 class Home extends StatefulWidget {
+  const Home({Key? key}) : super(key: key);
+
 
   @override
   State<Home> createState() => _HomeState();
@@ -32,12 +38,41 @@ class _HomeState extends State<Home> {
   List<String> startingPlaces=['DSC', 'Dhanmondi', 'Uttora'];
   List<String> days=['Saturday', 'Sunday', 'Monday','Tuesday','Wednesday','Thursday','Friday'];
   List<String> destinationPlaces=['DSC', 'Dhanmondi', 'Uttora'];
-  List entries=['surjomukhi-1','surjomukhi-2','surjomukhi-3','surjomukhi-4','surjomukhi-5','surjomukhi-6','surjomukhi-7','surjomukhi-8','surjomukhi-9','surjomukhi-10'];
+  List entries=[];
 
   String _startingPlace='';
   String _day='';
   String _destinationPlace='';
+  var client = http.Client();
+  search() async{
+    var uri=Uri(scheme: 'http',host: '192.168.1.120',port: 8000,path: 'api/search/$_startingPlace/$_destinationPlace',);
+    print(uri.toString());
+    http.Response response;
+    try {
+      response = await client.get(uri);
+      //print(jsonDecode(response.body).runtimeType);
+      var ls;
+      if(response.statusCode<400 && response.statusCode>=200){
+        ls=jsonDecode(response.body) as List;
+      }
 
+
+        setState(() {
+          if(response.statusCode<400 && response.statusCode>=200) {
+            entries = ls.map((e) => Bus.fromJson(e)).toList();
+          }else{
+            entries=[];
+          }
+        });
+
+
+
+      return response.body;
+    } on Exception catch(e) {
+      print(e);
+    }
+    return '';
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -123,10 +158,9 @@ class _HomeState extends State<Home> {
                 ),
                 const SizedBox(height: 25,),
                 ElevatedButton(
-                    onPressed: (){
-                      print(_startingPlace);
-                      print(_day);
-                      print(_destinationPlace);
+                    onPressed: () async{
+                      search();
+
                     },
                     child: const Text('Search',),
                 ),
@@ -144,7 +178,9 @@ class _HomeState extends State<Home> {
                     ),
                   ),
                 ),
-              ):
+              ): const Center(
+                child: Text('No Bus Found',),
+              ),
               const SizedBox(height: 20,),
               ListView.builder(
                   itemCount: entries.length,
@@ -162,10 +198,20 @@ class _HomeState extends State<Home> {
                             Expanded(
                                 flex: 12,
                                 child: Text(
-                                    '${index+1}. ${entries[index]}',
+                                    '${index+1}. ${entries[index].bus_name}',
                                 )
                                 ),
                             IconButton(
+                              onPressed: (){
+                                Navigator.pushNamed(context, '/BusDetails');
+                              },
+                              icon: const Icon(
+                                Icons.info_rounded,
+                                color: Colors.blue,
+                              ),
+                            ),
+                            IconButton(
+                              key: Key("Detail${entries[index].bus_name}"),
                                 onPressed: (){
                                   Navigator.pushNamed(context, '/BusDetails');
                                 },
@@ -175,6 +221,7 @@ class _HomeState extends State<Home> {
                                 ),
                             ),
                             IconButton(
+                              key: Key('Location${entries[index].bus_name}'),
                                 onPressed: (){
                                   Navigator.pushNamed(context, '/BusLocation');
                                 },
@@ -186,9 +233,9 @@ class _HomeState extends State<Home> {
                           ]
                     ),
                         )
-                    ): const Center(
+                    ): const Card(child: Center(
                       child: Text('No Bus Found',),
-                    );
+                    ),);
                   }
               )
           ]
