@@ -11,7 +11,7 @@ void main() {
       MaterialApp(
         title: 'Bus Tracker',
         routes: {
-          '/BusDetails': (context)=> const BusDetail(),
+          // '/BusDetails': (context)=> const BusDetail(bus: ,),
           '/BusLocation': (context)=> const BusLocation(),
         },
         theme: ThemeData(
@@ -213,7 +213,12 @@ class _HomeState extends State<Home> {
                             IconButton(
                               key: Key("Detail${entries[index].bus_name}"),
                                 onPressed: (){
-                                  Navigator.pushNamed(context, '/BusDetails');
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => BusDetail(bus: entries[index]),
+                                    ),
+                                  );
                                 },
                                 icon: const Icon(
                                 Icons.info_rounded,
